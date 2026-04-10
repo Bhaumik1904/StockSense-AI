@@ -185,22 +185,31 @@ def get_trending_indian_stocks(limit: int = 7) -> list:
         return _TRENDING_CACHE["tickers"][:limit]
         
     from src.tickers import INDIAN_STOCKS
-    symbols = [item["symbol"] for item in INDIAN_STOCKS]
+    # Use only top 10 indicators for trend to minimize network overhead and rate-limit risks
+    symbols = [item["symbol"] for item in INDIAN_STOCKS[:10]]
     
     try:
-        df = yf.download(symbols, period="5d", interval="1d", group_by="ticker", threads=True, progress=False)
+        # Fetching with threads=False is often more stable in local/restricted environments
+        df = yf.download(symbols, period="2d", interval="1d", group_by="ticker", threads=False, progress=False)
+        
+        if df is None or df.empty:
+            return ["RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "INFY.NS", "ICICIBANK.NS", "SBIN.NS", "BHARTIARTL.NS"][:limit]
+
         gainers = []
         for symbol in symbols:
-            if isinstance(df.columns, pd.MultiIndex):
-                if symbol in df.columns.levels[0]:
-                    sub_df = df[symbol].dropna()
-                    if len(sub_df) >= 2:
-                        closes = sub_df['Close']
-                        latest = float(closes.iloc[-1])
-                        prev = float(closes.iloc[-2])
-                        if prev > 0:
-                            pct = (latest - prev) / prev * 100
-                            gainers.append((symbol, pct))
+            try:
+                # Handle MultiIndex and SingleIndex results gracefully
+                target_df = df[symbol] if isinstance(df.columns, pd.MultiIndex) else df
+                
+                sub_df = target_df.dropna()
+                if len(sub_df) >= 2:
+                    current = float(sub_df['Close'].iloc[-1])
+                    previous = float(sub_df['Close'].iloc[-2])
+                    if previous > 0:
+                        change_pct = (current - previous) / previous * 100
+                        gainers.append((symbol, change_pct))
+            except Exception:
+                continue
         
         gainers.sort(key=lambda x: x[1], reverse=True)
         top_symbols = [g[0] for g in gainers]
@@ -209,10 +218,11 @@ def get_trending_indian_stocks(limit: int = 7) -> list:
             _TRENDING_CACHE["time"] = now
             _TRENDING_CACHE["tickers"] = top_symbols
             return top_symbols[:limit]
-    except Exception as e:
-        print(f"Error fetching trending: {e}")
+            
+    except Exception:
+        # Fail silently to avoid console spam; fallback to stable defaults
+        pass
         
-    # Fallback to defaults
     return ["RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "INFY.NS", "ICICIBANK.NS", "SBIN.NS", "BHARTIARTL.NS"][:limit]
 
 

@@ -1,6 +1,18 @@
+# Environments
+.env
+
+# Database
+database/
+db.sqlite3
+
+# Python cache
 __pycache__/
 *.pyc
-venv/
-env/
-database/
-.env
+
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

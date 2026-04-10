@@ -11,6 +11,8 @@ import hmac
 import hashlib
 import sqlite3
 import razorpay
+from dotenv import load_dotenv
+load_dotenv()
 from datetime import datetime
 from functools import wraps
 from flask import (
@@ -25,15 +27,15 @@ from src.tickers import INDIAN_STOCKS
 # ─────────────────────────────────────────────
 # Razorpay Client
 # ─────────────────────────────────────────────
-RZP_KEY_ID     = "rzp_test_SbgBAcy98B0OSc"
-RZP_KEY_SECRET = "jRnRqjmJ06XeXwhsUQ24L7mh"
+RZP_KEY_ID     = os.getenv("RZP_KEY_ID")
+RZP_KEY_SECRET = os.getenv("RZP_KEY_SECRET")
 rzp_client = razorpay.Client(auth=(RZP_KEY_ID, RZP_KEY_SECRET))
 
 # ─────────────────────────────────────────────
 # App Configuration
 # ─────────────────────────────────────────────
 app = Flask(__name__)
-app.secret_key = "stocksense_super_secure_key_2026"  # Change in production!
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "fallback_key_for_dev_only")
 
 DATABASE = os.path.join(os.path.dirname(__file__), "database", "db.sqlite3")
 
