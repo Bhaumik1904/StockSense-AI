@@ -35,13 +35,7 @@ rzp_client = razorpay.Client(auth=(RZP_KEY_ID, RZP_KEY_SECRET))
 app = Flask(__name__)
 app.secret_key = "stocksense_super_secure_key_2026"  # Change in production!
 
-DATABASE_LOCAL = os.path.join(os.path.dirname(__file__), "database", "db.sqlite3")
-
-# If deployed on Render, use the persistent disk mount path (/data)
-if os.environ.get("RENDER"):
-    DATABASE = "/data/db.sqlite3"
-else:
-    DATABASE = DATABASE_LOCAL
+DATABASE = os.path.join(os.path.dirname(__file__), "database", "db.sqlite3")
 
 # ─────────────────────────────────────────────
 # Database Helpers
