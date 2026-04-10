@@ -11,5 +11,5 @@ razorpay==2.0.1
 textblob==0.20.0
 python-dotenv==1.0.1
 gunicorn==21.2.0
-curl_cffi==0.7.1
-yahooquery==2.3.7
+curl_cffi
+yahooquery
