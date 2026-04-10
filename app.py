@@ -37,7 +37,11 @@ rzp_client = razorpay.Client(auth=(RZP_KEY_ID, RZP_KEY_SECRET))
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "fallback_key_for_dev_only")
 
-DATABASE = os.path.join(os.path.dirname(__file__), "database", "db.sqlite3")
+# Use /tmp for the database when running on Vercel (read-only filesystem workaround)
+if os.getenv("VERCEL"):
+    DATABASE = "/tmp/db.sqlite3"
+else:
+    DATABASE = os.path.join(os.path.dirname(__file__), "database", "db.sqlite3")
 
 # ─────────────────────────────────────────────
 # Database Helpers
@@ -110,6 +114,9 @@ def init_db():
             pass
             
         db.commit()
+
+# Trigger DB initialization on startup (necessary for Vercel)
+init_db()
 
 
 # ─────────────────────────────────────────────
