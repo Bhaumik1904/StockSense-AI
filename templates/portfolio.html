@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portfolio – StockSense AI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>" />
+  <style>
+    /* ── Razorpay Mock Modal ────────────────────────── */
+    .rzp-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,0.65);
+      z-index:2000; display:flex; align-items:center; justify-content:center;
+    }
+    .rzp-sheet {
+      background:#fff; border-radius:12px; width:100%; max-width:380px;
+      overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.4);
+      font-family:'Inter',sans-serif; color:#111;
+    }
+    .rzp-header {
+      background:#072654; padding:16px 20px;
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .rzp-logo { color:#fff; font-size:1.2em; font-weight:800; letter-spacing:-0.5px; }
+    .rzp-logo span { color:#2196f3; }
+    .rzp-amount-badge {
+      background:rgba(255,255,255,0.12); color:#fff;
+      padding:4px 12px; border-radius:20px; font-size:0.9em; font-weight:600;
+    }
+    .rzp-body { padding:20px; }
+    .rzp-merchant { font-size:0.82em; color:#666; margin-bottom:16px; }
+    .rzp-merchant strong { color:#111; }
+    .rzp-tabs { display:flex; border-bottom:2px solid #f0f0f0; margin-bottom:16px; gap:0; }
+    .rzp-tab {
+      flex:1; padding:10px; text-align:center; font-size:0.83em;
+      cursor:pointer; color:#666; border-bottom:2px solid transparent;
+      margin-bottom:-2px; transition:all 0.15s;
+    }
+    .rzp-tab.active { color:#072654; border-bottom-color:#072654; font-weight:700; }
+    .rzp-form-group { margin-bottom:12px; }
+    .rzp-form-group label { font-size:0.78em; color:#555; display:block; margin-bottom:4px; }
+    .rzp-form-group input, .rzp-form-group select {
+      width:100%; padding:10px 12px; border:1.5px solid #ddd;
+      border-radius:6px; font-size:0.9em; outline:none; box-sizing:border-box;
+      transition:border-color 0.2s;
+    }
+    .rzp-form-group input:focus { border-color:#072654; }
+    .rzp-pay-btn {
+      width:100%; padding:13px; background:#072654; color:#fff;
+      border:none; border-radius:8px; font-size:1em; font-weight:700;
+      cursor:pointer; transition:opacity 0.2s; margin-top:8px;
+    }
+    .rzp-pay-btn:hover { opacity:0.88; }
+    .rzp-pay-btn:disabled { opacity:0.55; cursor:not-allowed; }
+    .rzp-footer { text-align:center; font-size:0.72em; color:#aaa; padding:10px; background:#f9f9f9; }
+    .rzp-footer span { color:#2196f3; font-weight:600; }
+    /* Success animation */
+    .rzp-success {
+      text-align:center; padding:40px 24px;
+    }
+    .rzp-success .checkmark {
+      font-size:4rem; animation: pop 0.4s ease;
+    }
+    @keyframes pop {
+      0%   { transform: scale(0); }
+      80%  { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+    .rzp-success h3 { margin:16px 0 8px; color:#072654; font-size:1.2em; }
+    .rzp-success p  { color:#555; font-size:0.9em; }
+    /* Amount picker */
+    .amount-pills { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+    .amount-pill {
+      padding:6px 14px; border:1.5px solid #ddd; border-radius:20px;
+      font-size:0.82em; cursor:pointer; transition:all 0.15s; color:#333;
+    }
+    .amount-pill:hover, .amount-pill.selected {
+      border-color:#072654; background:#072654; color:#fff;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Navbar ─────────────────────────────────── -->
+  <nav class="navbar">
+    <a href="/dashboard" class="navbar-brand">
+      <span class="brand-icon">📈</span>StockSense AI
+    </a>
+    <!-- Nav moved to sidebar -->
+    <div class="navbar-user">
+      <div class="user-badge">
+        <div class="user-avatar">{{ username[0].upper() }}</div>
+        <span>{{ username }}</span>
+      </div>
+      <a href="/logout" class="btn btn-secondary btn-sm">👋 Logout</a>
+    </div>
+  </nav>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- ── Portfolio Layout ──────────────────────── -->
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <div style="padding: 12px 0;">
+        <a href="/dashboard" class="sidebar-nav-item"><span class="sidebar-nav-icon">⚡</span> Dashboard</a>
+        <a href="/portfolio" class="sidebar-nav-item active"><span class="sidebar-nav-icon">💼</span> Portfolio</a>
+        <a href="/transactions" class="sidebar-nav-item "><span class="sidebar-nav-icon">🕒</span> History</a>
+        <a href="/market" class="sidebar-nav-item "><span class="sidebar-nav-icon">🌐</span> Market</a>
+        <a href="/compare" class="sidebar-nav-item "><span class="sidebar-nav-icon">⚖️</span> Compare</a>
+      </div>
+    </aside>
+    <main class="main-content">
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <div style="font-size: 1.5em; font-weight: bold;">My Portfolio</div>
+      <div style="display:flex; gap:10px;">
+        <a href="/transactions" class="btn btn-secondary">📋 Trade History</a>
+        <button id="add-funds-btn" class="btn btn-primary">➕ Add Funds</button>
+      </div>
+    </div>
+
+    <!-- Summary Metrics -->
+    <div class="metrics-row" style="margin-bottom: 20px;">
+      <div class="stat-card">
+        <div class="stat-label">Available Cash</div>
+        <div class="stat-value" id="port-cash">—</div>
+        <div class="stat-icon">💵</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Portfolio Value</div>
+        <div class="stat-value" id="port-value">—</div>
+        <div class="stat-icon">📈</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Equity</div>
+        <div class="stat-value" id="port-equity">—</div>
+        <div class="stat-icon">🏦</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total P&L</div>
+        <div class="stat-value" id="port-pnl">—</div>
+        <div class="stat-icon">⚖️</div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+      <!-- Chart -->
+      <div class="card" style="flex: 1; min-width: 300px;">
+        <div class="card-header"><span class="card-title">📊 Diversity</span></div>
+        <div class="card-body" style="display:flex; justify-content:center; align-items:center;">
+           <canvas id="portfolio-chart" style="max-height: 300px;"></canvas>
+        </div>
+      </div>
+
+      <!-- Holdings Table -->
+      <div class="card" style="flex: 2; min-width: 400px;">
+        <div class="card-header"><span class="card-title">📦 Holdings</span></div>
+        <div class="card-body" style="padding:0; overflow-x:auto;">
+          <table class="watchlist-table" style="width:100%;">
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Shares</th>
+                <th>Avg Cost</th>
+                <th>Current Price</th>
+                <th>Total Value</th>
+                <th>P&L</th>
+              </tr>
+            </thead>
+            <tbody id="holdings-tbody">
+              <tr><td colspan="6" style="text-align:center; padding:20px;">Loading portfolio...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Add Funds Modal (Real Razorpay) ─────────────── -->
+  <div id="rzp-overlay" class="rzp-overlay hidden">
+    <div class="rzp-sheet">
+      <div class="rzp-header">
+        <div class="rzp-logo">razor<span>pay</span></div>
+        <div class="rzp-amount-badge" id="rzp-amount-badge">₹50,000</div>
+      </div>
+      <div class="rzp-body">
+        <div class="rzp-merchant">Adding funds to: <strong>StockSense AI – Virtual Portfolio</strong></div>
+        <div style="font-size:0.82em; color:#555; margin-bottom:8px;">Select amount to add:</div>
+        <div class="amount-pills">
+          <div class="amount-pill" data-amount="10000">₹10,000</div>
+          <div class="amount-pill selected" data-amount="50000">₹50,000</div>
+          <div class="amount-pill" data-amount="100000">₹1,00,000</div>
+          <div class="amount-pill" data-amount="500000">₹5,00,000</div>
+        </div>
+        <div style="font-size:0.78em; color:#888; margin-bottom:16px;">
+          💡 Use test card <strong>4111 1111 1111 1111</strong>, any future expiry, CVV: <strong>123</strong>
+        </div>
+        <button class="rzp-pay-btn" id="rzp-proceed-btn">Pay ₹50,000 with Razorpay</button>
+        <button id="rzp-cancel-btn" style="width:100%; margin-top:8px; padding:8px; background:transparent; border:none; color:#888; cursor:pointer; font-size:0.85em;">Cancel</button>
+      </div>
+      <div class="rzp-footer">Secured by <span>Razorpay</span> | 256-bit SSL encryption 🔒</div>
+    </div>
+  </div>
+
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script>
+    // ── Portfolio Data ─────────────────────────────────
+    document.addEventListener("DOMContentLoaded", async () => {
+      try {
+        const res  = await fetch("/api/portfolio_data");
+        const data = await res.json();
+
+        document.getElementById("port-cash").innerText   = `₹${data.cash_balance.toLocaleString(undefined,{minimumFractionDigits:2})}`;
+        document.getElementById("port-value").innerText  = `₹${data.portfolio_value.toLocaleString(undefined,{minimumFractionDigits:2})}`;
+        document.getElementById("port-equity").innerText = `₹${data.total_equity.toLocaleString(undefined,{minimumFractionDigits:2})}`;
+
+        const pnl   = data.portfolio_value - data.total_cost_basis;
+        const pnlEl = document.getElementById("port-pnl");
+        pnlEl.innerText    = `${pnl >= 0 ? '+' : ''}₹${pnl.toLocaleString(undefined,{minimumFractionDigits:2})}`;
+        pnlEl.style.color  = pnl >= 0 ? 'var(--trend-up)' : 'var(--trend-down)';
+
+        const tbody = document.getElementById("holdings-tbody");
+        if (data.holdings && data.holdings.length > 0) {
+          tbody.innerHTML = "";
+          const labels = [], chartData = [];
+
+          data.holdings.forEach(h => {
+            labels.push(h.ticker);
+            chartData.push(h.total_value);
+            const pnlColor = h.pnl >= 0 ? 'var(--trend-up)' : 'var(--trend-down)';
+            const pnlSign  = h.pnl >= 0 ? '+' : '';
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td><strong>${h.ticker}</strong></td>
+              <td>${h.shares}</td>
+              <td>₹${h.avg_cost.toLocaleString(undefined,{minimumFractionDigits:2})}</td>
+              <td>₹${h.current_price.toLocaleString(undefined,{minimumFractionDigits:2})}</td>
+              <td>₹${h.total_value.toLocaleString(undefined,{minimumFractionDigits:2})}</td>
+              <td style="color:${pnlColor};font-weight:bold;">${pnlSign}₹${h.pnl.toLocaleString(undefined,{minimumFractionDigits:2})} (${pnlSign}${h.pnl_pct.toFixed(2)}%)</td>
+            `;
+            tbody.appendChild(tr);
+          });
+
+          new Chart(document.getElementById("portfolio-chart"), {
+            type: "doughnut",
+            data: { labels, datasets: [{ data: chartData,
+              backgroundColor: ["#3b82f6","#10b981","#f59e0b","#ef4444","#8b5cf6","#ec4899","#14b8a6"],
+              borderWidth: 0 }] },
+            options: { cutout:"70%", plugins:{ legend:{ position:"bottom", labels:{ color:"#a1a1aa" } } } }
+          });
+        } else {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:#a1a1aa;">No holdings yet. Go to Dashboard and start trading!</td></tr>`;
+        }
+      } catch(e) {
+        console.error(e);
+        document.getElementById("holdings-tbody").innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:red;">Failed to load portfolio</td></tr>`;
+      }
+    });
+
+    // ── Razorpay Add Funds ──────────────────────────────────
+    let selectedAmount = 50000;
+
+    document.querySelectorAll(".amount-pill").forEach(pill => {
+      pill.addEventListener("click", () => {
+        document.querySelectorAll(".amount-pill").forEach(p => p.classList.remove("selected"));
+        pill.classList.add("selected");
+        selectedAmount = parseInt(pill.dataset.amount);
+        document.getElementById("rzp-amount-badge").innerText =
+          `₹${selectedAmount.toLocaleString("en-IN")}`;
+        document.getElementById("rzp-proceed-btn").innerText =
+          `Pay ₹${selectedAmount.toLocaleString("en-IN")} with Razorpay`;
+      });
+    });
+
+    document.getElementById("add-funds-btn").addEventListener("click", () => {
+      document.getElementById("rzp-overlay").classList.remove("hidden");
+    });
+
+    document.getElementById("rzp-cancel-btn").addEventListener("click", () => {
+      document.getElementById("rzp-overlay").classList.add("hidden");
+    });
+
+    document.getElementById("rzp-overlay").addEventListener("click", (e) => {
+      if (e.target === document.getElementById("rzp-overlay"))
+        document.getElementById("rzp-overlay").classList.add("hidden");
+    });
+
+    document.getElementById("rzp-proceed-btn").addEventListener("click", async () => {
+      const btn = document.getElementById("rzp-proceed-btn");
+      btn.disabled = true;
+      btn.innerText = "Creating order…";
+
+      try {
+        // Step 1: Create server-side order
+        const orderRes  = await fetch("/create_order", {
+          method:  "POST",
+          headers: {"Content-Type": "application/json"},
+          body:    JSON.stringify({ amount: selectedAmount })
+        });
+        const orderData = await orderRes.json();
+        if (orderData.error) {
+          showToast(orderData.error, "error");
+          btn.disabled = false;
+          btn.innerText = `Pay ₹${selectedAmount.toLocaleString("en-IN")} with Razorpay`;
+          return;
+        }
+
+        // Step 2: Open Real Razorpay Checkout
+        document.getElementById("rzp-overlay").classList.add("hidden");
+        const options = {
+          key:         orderData.key,
+          amount:      orderData.amount,
+          currency:    "INR",
+          name:        "StockSense AI",
+          description: "Add Virtual Trading Funds",
+          order_id:    orderData.order_id,
+          prefill:     { name: "{{ username }}" },
+          theme:       { color: "#3b82f6" },
+          handler: async function(response) {
+            // Step 3: Verify on server + credit balance
+            const verRes = await fetch("/verify_payment", {
+              method:  "POST",
+              headers: {"Content-Type": "application/json"},
+              body:    JSON.stringify({
+                razorpay_order_id:   response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature:  response.razorpay_signature,
+                amount_inr:          selectedAmount
+              })
+            });
+            const verData = await verRes.json();
+            if (verData.success) {
+              showToast(`✅ ₹${selectedAmount.toLocaleString("en-IN")} added! New balance: ₹${verData.new_balance.toLocaleString("en-IN", {minimumFractionDigits:2})}`, "success");
+              setTimeout(() => location.reload(), 2200);
+            } else {
+              showToast(verData.error || "Verification failed.", "error");
+            }
+          },
+          modal: { ondismiss: () => {} }
+        };
+        const rzp = new Razorpay(options);
+        rzp.open();
+      } catch(e) {
+        showToast("Failed to initiate payment. Please try again.", "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = `Pay ₹${selectedAmount.toLocaleString("en-IN")} with Razorpay`;
+      }
+    });
+  </script>
+</main>
+</body>
+</html>

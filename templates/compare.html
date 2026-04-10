@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Compare Stocks – StockSense AI</title>
+  <meta name="description" content="Compare historical performance of 2-3 Indian stocks on the same chart." />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>" />
+  <style>
+    .compare-input-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: flex-end;
+    }
+    .compare-input-row .ticker-box {
+      flex: 1;
+      min-width: 140px;
+      max-width: 200px;
+      position: relative;
+    }
+    .ticker-color-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+    .return-pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.82em;
+      font-weight: 600;
+    }
+    .return-pill.positive { background: rgba(16,185,129,0.15); color: #10b981; }
+    .return-pill.negative { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .return-pill.neutral  { background: rgba(161,161,170,0.15); color: #a1a1aa; }
+
+    .stock-summary-cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 20px;
+    }
+    .stock-summary-card {
+      flex: 1;
+      min-width: 200px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 18px;
+    }
+    .stock-summary-card .ticker-header {
+      display: flex;
+      align-items: center;
+      font-size: 1.1em;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .stock-summary-card .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .stock-summary-card .stat-row span:last-child {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    #compare-error {
+      color: #ef4444;
+      font-size: 0.9em;
+      margin-top: 8px;
+    }
+    .mode-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .mode-tab {
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      cursor: pointer;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+    .mode-tab.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Navbar ─────────────────────────────────── -->
+  <nav class="navbar">
+    <a href="/dashboard" class="navbar-brand">
+      <span class="brand-icon">📈</span>StockSense AI
+    </a>
+    <!-- Nav moved to sidebar -->
+    <div class="navbar-user">
+      <div class="user-badge">
+        <div class="user-avatar">{{ username[0].upper() }}</div>
+        <span>{{ username }}</span>
+      </div>
+      <a href="/logout" class="btn btn-secondary btn-sm">👋 Logout</a>
+    </div>
+  </nav>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <div style="padding: 12px 0;">
+        <a href="/dashboard" class="sidebar-nav-item"><span class="sidebar-nav-icon">⚡</span> Dashboard</a>
+        <a href="/portfolio" class="sidebar-nav-item "><span class="sidebar-nav-icon">💼</span> Portfolio</a>
+        <a href="/transactions" class="sidebar-nav-item "><span class="sidebar-nav-icon">🕒</span> History</a>
+        <a href="/market" class="sidebar-nav-item "><span class="sidebar-nav-icon">🌐</span> Market</a>
+        <a href="/compare" class="sidebar-nav-item active"><span class="sidebar-nav-icon">⚖️</span> Compare</a>
+      </div>
+    </aside>
+    <main class="main-content">
+
+    <!-- Header -->
+    <div style="margin-bottom: 24px;">
+      <div style="font-size: 1.6em; font-weight: 800; margin-bottom: 6px;">⚖️ Stock Comparison</div>
+      <p style="color: var(--text-muted); font-size: 0.9em;">Compare up to 3 stocks on the same chart. Performance is shown as % change from the start date so different-priced stocks can be compared fairly.</p>
+    </div>
+
+    <!-- Controls -->
+    <div class="card" style="margin-bottom: 20px;">
+      <div class="card-body" style="padding: 20px;">
+        <div class="compare-input-row">
+          <div class="ticker-box">
+            <label style="display:block; font-size:0.8em; color:var(--text-muted); margin-bottom:5px;">
+              <span class="ticker-color-dot" style="background:#3b82f6;"></span> Stock 1 *
+            </label>
+            <input id="t1" class="form-control" placeholder="e.g. TCS.NS" maxlength="15" style="width:100%;" />
+          </div>
+          <div class="ticker-box">
+            <label style="display:block; font-size:0.8em; color:var(--text-muted); margin-bottom:5px;">
+              <span class="ticker-color-dot" style="background:#10b981;"></span> Stock 2 *
+            </label>
+            <input id="t2" class="form-control" placeholder="e.g. INFY.NS" maxlength="15" style="width:100%;" />
+          </div>
+          <div class="ticker-box">
+            <label style="display:block; font-size:0.8em; color:var(--text-muted); margin-bottom:5px;">
+              <span class="ticker-color-dot" style="background:#f59e0b;"></span> Stock 3 (optional)
+            </label>
+            <input id="t3" class="form-control" placeholder="e.g. WIPRO.NS" maxlength="15" style="width:100%;" />
+          </div>
+          <div class="ticker-box" style="min-width:130px; max-width:150px;">
+            <label style="display:block; font-size:0.8em; color:var(--text-muted); margin-bottom:5px;">Period</label>
+            <select id="compare-period" class="form-control" style="width:100%;">
+              <option value="1mo">1 Month</option>
+              <option value="3mo">3 Months</option>
+              <option value="6mo" selected>6 Months</option>
+              <option value="1y">1 Year</option>
+              <option value="2y">2 Years</option>
+              <option value="5y">5 Years</option>
+            </select>
+          </div>
+          <div style="display:flex; align-items:flex-end; gap:8px;">
+            <button id="compare-btn" class="btn btn-primary" style="padding: 10px 22px;">⚖️ Compare</button>
+            <button id="clear-btn" class="btn btn-secondary" style="padding: 10px 16px;">✕ Clear</button>
+          </div>
+        </div>
+        <div id="compare-error"></div>
+
+        <!-- Quick presets -->
+        <div style="margin-top: 14px;">
+          <span style="font-size:0.78em; color:var(--text-muted);">Quick Compare:</span>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">
+            <button class="preset-btn btn btn-secondary btn-sm" data-t1="TCS.NS"      data-t2="INFY.NS"     data-t3="WIPRO.NS">IT Giants</button>
+            <button class="preset-btn btn btn-secondary btn-sm" data-t1="HDFCBANK.NS" data-t2="ICICIBANK.NS" data-t3="SBIN.NS">Banks</button>
+            <button class="preset-btn btn btn-secondary btn-sm" data-t1="RELIANCE.NS" data-t2="ONGC.NS"      data-t3="BPCL.NS">Energy</button>
+            <button class="preset-btn btn btn-secondary btn-sm" data-t1="TATAMOTORS.NS" data-t2="MARUTI.NS"  data-t3="BAJAJ-AUTO.NS">Auto</button>
+            <button class="preset-btn btn btn-secondary btn-sm" data-t1="SUNPHARMA.NS" data-t2="DRREDDY.NS"  data-t3="CIPLA.NS">Pharma</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="compare-loading" class="hidden">
+      <div class="loading-overlay">
+        <div class="spinner"></div>
+        <span>Fetching historical data for all stocks...</span>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="compare-results" class="hidden">
+
+      <!-- Chart mode tabs + Chart -->
+      <div class="card" style="margin-bottom: 20px;">
+        <div class="card-header">
+          <span class="card-title">📈 Performance Chart</span>
+          <div class="mode-tabs">
+            <div class="mode-tab active" id="tab-pct" onclick="switchMode('pct')">% Return</div>
+            <div class="mode-tab" id="tab-abs" onclick="switchMode('abs')">Actual Price ₹</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrapper" style="height: 360px;">
+            <canvas id="compare-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="stock-summary-cards" id="summary-cards"></div>
+
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script>
+    const COLORS = ["#3b82f6", "#10b981", "#f59e0b"];
+    let compareChart = null;
+    let lastData = null;
+    let currentMode = "pct";
+
+    // ── Auto append .NS ──────────────────────────────────
+    function normalizeTicker(t) {
+      t = t.trim().toUpperCase();
+      if (t && !t.includes(".")) t += ".NS";
+      return t;
+    }
+
+    // ── Switch chart mode (% vs abs) ────────────────────
+    function switchMode(mode) {
+      currentMode = mode;
+      document.getElementById("tab-pct").className = "mode-tab" + (mode === "pct" ? " active" : "");
+      document.getElementById("tab-abs").className = "mode-tab" + (mode === "abs" ? " active" : "");
+      if (lastData) renderChart(lastData, mode);
+    }
+
+    // ── Render Chart.js chart ───────────────────────────
+    function renderChart(stocks, mode) {
+      const ctx = document.getElementById("compare-chart");
+      if (compareChart) { compareChart.destroy(); compareChart = null; }
+
+      // Use the longest date array as labels
+      const maxDates = stocks.reduce((a, b) => a.dates.length > b.dates.length ? a : b).dates;
+
+      const datasets = stocks.map((s, i) => ({
+        label: s.ticker,
+        data: mode === "pct" ? s.pct_change : s.closes,
+        borderColor: COLORS[i],
+        backgroundColor: COLORS[i] + "18",
+        borderWidth: 2.5,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointHoverBorderWidth: 2,
+        pointHoverBackgroundColor: COLORS[i],
+        tension: 0.35,
+        fill: false,
+      }));
+
+      compareChart = new Chart(ctx, {
+        type: "line",
+        data: { labels: maxDates, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 600 },
+          interaction: { mode: "index", intersect: false },
+          plugins: {
+            legend: {
+              labels: { color: "#94a3b8", font: { size: 12 }, boxWidth: 18, padding: 16 }
+            },
+            tooltip: {
+              backgroundColor: "rgba(13,20,36,0.95)",
+              borderColor: "rgba(99,179,237,0.2)",
+              borderWidth: 1,
+              padding: 12,
+              titleColor: "#f0f4ff",
+              bodyColor: "#94a3b8",
+              callbacks: {
+                label: (ctx) => {
+                  if (ctx.raw === null || ctx.raw === undefined) return null;
+                  return mode === "pct"
+                    ? ` ${ctx.dataset.label}: ${ctx.raw >= 0 ? "+" : ""}${Number(ctx.raw).toFixed(2)}%`
+                    : ` ${ctx.dataset.label}: ₹${Number(ctx.raw).toFixed(2)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: "rgba(255,255,255,0.03)" },
+              ticks: { color: "#4a5568", maxTicksLimit: 8, maxRotation: 0, font: { size: 11 } }
+            },
+            y: {
+              position: "right",
+              grid: { color: "rgba(255,255,255,0.05)" },
+              ticks: {
+                color: "#4a5568",
+                font: { size: 11 },
+                callback: (v) => mode === "pct" ? `${v >= 0 ? "+" : ""}${v.toFixed(1)}%` : `₹${v.toFixed(0)}`
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // ── Render summary stat cards ────────────────────────
+    function renderSummaryCards(stocks) {
+      const container = document.getElementById("summary-cards");
+      container.innerHTML = "";
+      stocks.forEach((s, i) => {
+        const ret = s.total_return;
+        const cls = ret > 0 ? "positive" : ret < 0 ? "negative" : "neutral";
+        const sign = ret > 0 ? "+" : "";
+        container.innerHTML += `
+          <div class="stock-summary-card">
+            <div class="ticker-header">
+              <span class="ticker-color-dot" style="background:${COLORS[i]};"></span>
+              ${s.ticker}
+              <span class="return-pill ${cls}" style="margin-left:auto;">${sign}${ret.toFixed(2)}%</span>
+            </div>
+            <div class="stat-row">
+              <span>Current Price</span>
+              <span>₹${s.latest_close.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+            </div>
+            <div class="stat-row">
+              <span>Start Price</span>
+              <span>₹${s.closes[0].toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+            </div>
+            <div class="stat-row">
+              <span>Total Return</span>
+              <span style="color:${ret >= 0 ? '#10b981' : '#ef4444'}; font-weight:700;">${sign}${ret.toFixed(2)}%</span>
+            </div>
+            <div class="stat-row">
+              <span>Data Points</span>
+              <span>${s.dates.length} trading days</span>
+            </div>
+          </div>`;
+      });
+    }
+
+    // ── Main compare fetch ───────────────────────────────
+    async function runCompare() {
+      const t1 = normalizeTicker(document.getElementById("t1").value);
+      const t2 = normalizeTicker(document.getElementById("t2").value);
+      const t3 = normalizeTicker(document.getElementById("t3").value);
+      const period = document.getElementById("compare-period").value;
+      const errEl = document.getElementById("compare-error");
+      errEl.textContent = "";
+
+      if (!t1 || !t2) {
+        errEl.textContent = "⚠️ Please enter at least 2 ticker symbols.";
+        return;
+      }
+
+      const tickers = [t1, t2];
+      if (t3) tickers.push(t3);
+
+      document.getElementById("compare-loading").classList.remove("hidden");
+      document.getElementById("compare-results").classList.add("hidden");
+
+      try {
+        const res = await fetch(`/api/compare?tickers=${tickers.join(",")}&period=${period}`);
+        const data = await res.json();
+
+        if (data.error) { errEl.textContent = "⚠️ " + data.error; return; }
+
+        const valid = data.stocks.filter(s => !s.error);
+        const failed = data.stocks.filter(s => s.error);
+
+        if (failed.length) {
+          errEl.textContent = `⚠️ Could not load: ${failed.map(s => s.ticker).join(", ")}`;
+        }
+
+        if (valid.length < 2) {
+          errEl.textContent = "⚠️ Need data for at least 2 stocks to compare.";
+          return;
+        }
+
+        lastData = valid;
+        renderChart(valid, currentMode);
+        renderSummaryCards(valid);
+        document.getElementById("compare-results").classList.remove("hidden");
+
+      } catch(e) {
+        errEl.textContent = "⚠️ Network error. Please try again.";
+      } finally {
+        document.getElementById("compare-loading").classList.add("hidden");
+      }
+    }
+
+    // ── Event Listeners ──────────────────────────────────
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("compare-btn").addEventListener("click", runCompare);
+
+      document.getElementById("clear-btn").addEventListener("click", () => {
+        ["t1","t2","t3"].forEach(id => document.getElementById(id).value = "");
+        document.getElementById("compare-results").classList.add("hidden");
+        document.getElementById("compare-error").textContent = "";
+      });
+
+      // Enter key on any input
+      ["t1","t2","t3"].forEach(id => {
+        document.getElementById(id).addEventListener("keydown", e => {
+          if (e.key === "Enter") runCompare();
+        });
+      });
+
+      // Quick preset buttons
+      document.querySelectorAll(".preset-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.getElementById("t1").value = btn.dataset.t1;
+          document.getElementById("t2").value = btn.dataset.t2;
+          document.getElementById("t3").value = btn.dataset.t3 || "";
+          runCompare();
+        });
+      });
+    });
+  </script>
+</main>
+</body>
+</html>

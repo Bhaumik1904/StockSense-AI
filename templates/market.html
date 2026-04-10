@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Market Explorer – StockSense AI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>" />
+  <style>
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .pagination button {
+      padding: 6px 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .pagination button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .pagination span {
+      display: flex;
+      align-items: center;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Navbar ─────────────────────────────────── -->
+  <nav class="navbar">
+    <a href="/dashboard" class="navbar-brand">
+      <span class="brand-icon">📈</span>StockSense AI
+    </a>
+    <!-- Nav moved to sidebar -->
+    <div class="navbar-user">
+      <div class="user-badge">
+        <div class="user-avatar">{{ username[0].upper() }}</div>
+        <span>{{ username }}</span>
+      </div>
+      <a href="/logout" class="btn btn-secondary btn-sm">👋 Logout</a>
+    </div>
+  </nav>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- ── Layout ──────────────────────── -->
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <div style="padding: 12px 0;">
+        <a href="/dashboard" class="sidebar-nav-item"><span class="sidebar-nav-icon">⚡</span> Dashboard</a>
+        <a href="/portfolio" class="sidebar-nav-item "><span class="sidebar-nav-icon">💼</span> Portfolio</a>
+        <a href="/transactions" class="sidebar-nav-item "><span class="sidebar-nav-icon">🕒</span> History</a>
+        <a href="/market" class="sidebar-nav-item active"><span class="sidebar-nav-icon">🌐</span> Market</a>
+        <a href="/compare" class="sidebar-nav-item "><span class="sidebar-nav-icon">⚖️</span> Compare</a>
+      </div>
+    </aside>
+    <main class="main-content">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div style="font-size: 1.5em; font-weight: bold;">Explore Indian Market</div>
+      <div class="form-group" style="margin: 0; width: 300px;">
+        <input type="text" id="market-search" class="form-control" placeholder="Search companies or tickers...">
+      </div>
+    </div>
+
+    <!-- Market Table -->
+    <div class="card">
+      <div class="card-body" style="padding:0; overflow-x:auto;">
+        <table class="watchlist-table" style="width:100%;">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Company Name</th>
+              <th>Live Price</th>
+              <th>Daily Change</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="market-tbody">
+            <tr><td colspan="5" style="text-align:center; padding:20px;">Loading market data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <div class="pagination">
+      <button id="prev-page" disabled>Previous</button>
+      <span id="page-info">Page 1</span>
+      <button id="next-page" disabled>Next</button>
+    </div>
+
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script>
+    let currentPage = 1;
+
+    async function loadMarketData(page = 1) {
+      currentPage = page;
+      const search = document.getElementById("market-search").value.trim();
+      const tbody = document.getElementById("market-tbody");
+      
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px;">Loading page ${page} (fetching live prices)...</td></tr>`;
+      
+      try {
+        const res = await fetch(`/api/market_data?page=${page}&search=${encodeURIComponent(search)}`);
+        const data = await res.json();
+        
+        tbody.innerHTML = "";
+        
+        if(data.stocks.length === 0) {
+           tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px;">No stocks found.</td></tr>`;
+        } else {
+           data.stocks.forEach(s => {
+             let tr = document.createElement("tr");
+             let pnlSign = s.change > 0 ? '+' : '';
+             let trendClass = 'neutral';
+             if (s.change > 0) trendClass = 'up';
+             if (s.change < 0) trendClass = 'down';
+             
+             tr.innerHTML = `
+               <td><strong>${s.symbol}</strong></td>
+               <td>${s.name}</td>
+               <td>${s.price ? '₹'+s.price.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) : 'N/A'}</td>
+               <td><span class="badge badge-${trendClass}">${pnlSign}${s.change_pct.toFixed(2)}%</span></td>
+               <td>
+                 <a href="/dashboard?ticker=${s.symbol}" class="btn btn-secondary btn-sm" style="margin-right: 5px;">📊 Analyze</a>
+               </td>
+             `;
+             tbody.appendChild(tr);
+           });
+        }
+        
+        // Update pagination
+        document.getElementById("page-info").innerText = `Page ${data.page} of ${data.pages || 1}`;
+        document.getElementById("prev-page").disabled = (data.page <= 1);
+        document.getElementById("next-page").disabled = (data.page >= data.pages);
+        
+      } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:red;">Error loading market data.</td></tr>`;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadMarketData();
+      
+      document.getElementById("prev-page").addEventListener("click", () => {
+         if(!document.getElementById("prev-page").disabled) loadMarketData(currentPage - 1);
+      });
+      document.getElementById("next-page").addEventListener("click", () => {
+         if(!document.getElementById("next-page").disabled) loadMarketData(currentPage + 1);
+      });
+      
+      // Debounce search
+      let timeout = null;
+      document.getElementById("market-search").addEventListener("input", () => {
+         clearTimeout(timeout);
+         timeout = setTimeout(() => {
+            loadMarketData(1);
+         }, 500);
+      });
+    });
+  </script>
+</main>
+</body>
+</html>

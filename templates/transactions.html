@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transaction History – StockSense AI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>" />
+  <style>
+    .filter-bar { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin-bottom:20px; }
+    .badge-buy  { background:rgba(16,185,129,0.15); color:#10b981; padding:3px 10px; border-radius:20px; font-size:0.8em; font-weight:700; }
+    .badge-sell { background:rgba(239,68,68,0.15);  color:#ef4444; padding:3px 10px; border-radius:20px; font-size:0.8em; font-weight:700; }
+    .tx-table th { font-size:0.78em; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); }
+    .tx-table td { font-size:0.88em; }
+    .tx-table tr:hover td { background:rgba(255,255,255,0.02); }
+    .empty-tx { text-align:center; padding:60px 20px; color:var(--text-muted); }
+    .summary-grid { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:20px; }
+    .summary-tile {
+      flex:1; min-width:160px;
+      background:var(--bg-card); border:1px solid var(--border-color);
+      border-radius:12px; padding:16px 20px;
+    }
+    .summary-tile .label { font-size:0.78em; color:var(--text-muted); margin-bottom:4px; }
+    .summary-tile .value { font-size:1.25em; font-weight:700; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="/dashboard" class="navbar-brand">
+      <span class="brand-icon">📈</span>StockSense AI
+    </a>
+    <!-- Nav moved to sidebar -->
+    <div class="navbar-user">
+      <div class="user-badge">
+        <div class="user-avatar">{{ username[0].upper() }}</div>
+        <span>{{ username }}</span>
+      </div>
+      <a href="/logout" class="btn btn-secondary btn-sm">👋 Logout</a>
+    </div>
+  </nav>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <div style="padding: 12px 0;">
+        <a href="/dashboard" class="sidebar-nav-item"><span class="sidebar-nav-icon">⚡</span> Dashboard</a>
+        <a href="/portfolio" class="sidebar-nav-item "><span class="sidebar-nav-icon">💼</span> Portfolio</a>
+        <a href="/transactions" class="sidebar-nav-item active"><span class="sidebar-nav-icon">🕒</span> History</a>
+        <a href="/market" class="sidebar-nav-item "><span class="sidebar-nav-icon">🌐</span> Market</a>
+        <a href="/compare" class="sidebar-nav-item "><span class="sidebar-nav-icon">⚖️</span> Compare</a>
+      </div>
+    </aside>
+    <main class="main-content">
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <div>
+        <div style="font-size:1.6em; font-weight:800;">📋 Transaction History</div>
+        <p style="color:var(--text-muted); font-size:0.9em; margin-top:4px;">Every buy and sell you've made in your virtual portfolio.</p>
+      </div>
+      <a href="/portfolio" class="btn btn-secondary">👈 Back to Portfolio</a>
+    </div>
+
+    <!-- Summary tiles -->
+    <div class="summary-grid" id="summary-grid">
+      <div class="summary-tile"><div class="label">Total Trades</div><div class="value" id="s-trades">—</div></div>
+      <div class="summary-tile"><div class="label">Total Bought</div><div class="value" id="s-bought" style="color:#10b981;">—</div></div>
+      <div class="summary-tile"><div class="label">Total Sold</div><div class="value" id="s-sold" style="color:#ef4444;">—</div></div>
+      <div class="summary-tile"><div class="label">Net Invested</div><div class="value" id="s-net">—</div></div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar">
+      <div>
+        <label style="font-size:0.8em; color:var(--text-muted); display:block; margin-bottom:4px;">Filter by Action</label>
+        <select id="f-action" class="form-control" style="min-width:130px;">
+          <option value="ALL">All Trades</option>
+          <option value="BUY">Buys Only</option>
+          <option value="SELL">Sells Only</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:0.8em; color:var(--text-muted); display:block; margin-bottom:4px;">Filter by Ticker</label>
+        <input id="f-ticker" class="form-control" placeholder="e.g. TCS.NS" style="min-width:150px;" />
+      </div>
+      <button id="apply-filter" class="btn btn-primary" style="align-self:flex-end;">🔍 Apply</button>
+      <button id="reset-filter" class="btn btn-secondary" style="align-self:flex-end;">✕ Reset</button>
+    </div>
+
+    <!-- Transaction Table -->
+    <div class="card">
+      <div class="card-body" style="padding:0; overflow-x:auto;">
+        <table class="watchlist-table tx-table" style="width:100%;">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Ticker</th>
+              <th>Action</th>
+              <th>Shares</th>
+              <th>Price / Share</th>
+              <th>Total Value</th>
+              <th>Date & Time</th>
+            </tr>
+          </thead>
+          <tbody id="tx-tbody">
+            <tr><td colspan="7" class="empty-tx">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script>
+    async function loadTransactions() {
+      const action = document.getElementById("f-action").value;
+      const ticker = document.getElementById("f-ticker").value.trim();
+      const tbody  = document.getElementById("tx-tbody");
+      tbody.innerHTML = `<tr><td colspan="7" class="empty-tx">Loading...</td></tr>`;
+
+      let url = `/api/transactions?action=${action}`;
+      if (ticker) url += `&ticker=${encodeURIComponent(ticker)}`;
+
+      try {
+        const res  = await fetch(url);
+        const data = await res.json();
+        const { transactions: txs, summary } = data;
+
+        // Summary
+        document.getElementById("s-trades").innerText = summary.num_trades;
+        document.getElementById("s-bought").innerText = `₹${summary.total_bought.toLocaleString(undefined,{minimumFractionDigits:2})}`;
+        document.getElementById("s-sold").innerText   = `₹${summary.total_sold.toLocaleString(undefined,{minimumFractionDigits:2})}`;
+        const net = summary.net_invested;
+        const netEl = document.getElementById("s-net");
+        netEl.innerText = `₹${Math.abs(net).toLocaleString(undefined,{minimumFractionDigits:2})}`;
+        netEl.style.color = net >= 0 ? "#10b981" : "#ef4444";
+
+        // Table
+        tbody.innerHTML = "";
+        if (!txs.length) {
+          tbody.innerHTML = `<tr><td colspan="7" class="empty-tx">📭 No transactions found.</td></tr>`;
+          return;
+        }
+
+        txs.forEach((t, i) => {
+          const badge = t.action === "BUY"
+            ? `<span class="badge-buy">▲ BUY</span>`
+            : `<span class="badge-sell">▼ SELL</span>`;
+          const dt = new Date(t.timestamp.replace(" ", "T") + "Z");
+          const dateStr = dt.toLocaleDateString("en-IN", {day:"2-digit",month:"short",year:"numeric"});
+          const timeStr = dt.toLocaleTimeString("en-IN", {hour:"2-digit",minute:"2-digit"});
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td style="color:var(--text-muted);">${i+1}</td>
+            <td><strong>${t.ticker}</strong></td>
+            <td>${badge}</td>
+            <td>${t.shares}</td>
+            <td>₹${t.price.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+            <td style="font-weight:600;">₹${t.total.toLocaleString(undefined,{minimumFractionDigits:2})}</td>
+            <td style="color:var(--text-muted); font-size:0.82em;">${dateStr}<br/>${timeStr}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+      } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="7" class="empty-tx" style="color:#ef4444;">Failed to load transactions.</td></tr>`;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadTransactions();
+      document.getElementById("apply-filter").addEventListener("click", loadTransactions);
+      document.getElementById("reset-filter").addEventListener("click", () => {
+        document.getElementById("f-action").value = "ALL";
+        document.getElementById("f-ticker").value = "";
+        loadTransactions();
+      });
+      document.getElementById("f-ticker").addEventListener("keydown", e => {
+        if (e.key === "Enter") loadTransactions();
+      });
+    });
+  </script>
+</main>
+</body>
+</html>

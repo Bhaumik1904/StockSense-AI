@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account – StockSense AI</title>
+  <meta name="description" content="Create your free StockSense AI account and start analyzing Indian stocks with ML-powered predictions." />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 15px; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0B0F14; color: #e8edf5;
+      min-height: 100vh; display: flex; flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+    .auth-topbar {
+      height: 48px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 32px; border-bottom: 1px solid rgba(255,255,255,0.07);
+      background: rgba(11,15,20,0.95); position: sticky; top: 0; z-index: 10;
+    }
+    .auth-brand {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.95rem; font-weight: 800; color: #e8edf5; text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+    .auth-brand-icon {
+      width: 26px; height: 26px; background: #1a2540;
+      border: 1px solid rgba(59,130,246,0.3); border-radius: 4px;
+      display: flex; align-items: center; justify-content: center; font-size: 0.9rem;
+    }
+    .auth-topbar-link { color: #7c8a99; font-size: 0.82rem; text-decoration: none; padding: 5px 12px; border: 1px solid rgba(255,255,255,0.08); border-radius: 4px; transition: all 0.18s; }
+    .auth-topbar-link:hover { color: #e8edf5; background: rgba(255,255,255,0.04); }
+
+    .auth-split {
+      flex: 1; display: grid; grid-template-columns: 1fr 460px;
+      min-height: calc(100vh - 48px);
+    }
+
+    /* LEFT */
+    .auth-left {
+      position: relative; overflow: hidden;
+      background: #0d1420; border-right: 1px solid rgba(255,255,255,0.07);
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 60px 56px;
+    }
+    .auth-left::before {
+      content: ''; position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 36px 36px; pointer-events: none;
+    }
+    .auth-left-glow {
+      position: absolute; bottom: -80px; right: -80px;
+      width: 400px; height: 400px;
+      background: radial-gradient(ellipse, rgba(34,197,94,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .auth-left-content { position: relative; z-index: 1; }
+
+    .auth-tagline-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.68rem; font-weight: 700; color: #4ade80;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      background: rgba(34,197,94,0.07); border: 1px solid rgba(34,197,94,0.2);
+      padding: 4px 10px; border-radius: 4px; margin-bottom: 20px;
+    }
+    .auth-tagline-badge .dot { width: 5px; height: 5px; border-radius: 50%; background: #22c55e; animation: blink 1.5s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    .auth-left-h1 { font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 800; letter-spacing: -0.04em; color: #f0f4ff; margin-bottom: 10px; line-height: 1.15; }
+    .auth-left-h1 .accent { color: #22c55e; }
+    .auth-left-p { font-size: 0.84rem; color: #7c8a99; line-height: 1.6; max-width: 360px; margin-bottom: 28px; }
+
+    /* What you get */
+    .perks-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .perk-item {
+      background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 6px; padding: 12px 14px;
+    }
+    .perk-icon { font-size: 1.1rem; margin-bottom: 5px; }
+    .perk-title { font-size: 0.78rem; font-weight: 700; color: #e8edf5; margin-bottom: 2px; }
+    .perk-desc  { font-size: 0.7rem; color: #7c8a99; line-height: 1.4; }
+
+    /* Portfolio preview */
+    .port-preview {
+      margin-top: 22px;
+      background: #111620; border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 7px; padding: 12px 14px;
+    }
+    .port-preview-label { font-size: 0.66rem; color: #3d4a58; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
+    .port-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .port-row:last-child { border-bottom: none; }
+    .port-sym { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; font-weight: 700; color: #e8edf5; }
+    .port-chg { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; font-weight: 700; }
+    .port-val { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #7c8a99; }
+
+    /* RIGHT */
+    .auth-right {
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 40px 40px; background: #0B0F14;
+      overflow-y: auto;
+    }
+    .auth-form-header { margin-bottom: 24px; }
+    .auth-form-title { font-size: 1.45rem; font-weight: 800; color: #f0f4ff; letter-spacing: -0.03em; margin-bottom: 4px; }
+    .auth-form-sub { font-size: 0.8rem; color: #7c8a99; }
+
+    .af-group { margin-bottom: 12px; }
+    .af-label { display: block; font-size: 0.7rem; font-weight: 700; color: #3d4a58; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 5px; }
+    .af-input-wrap { position: relative; }
+    .af-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 0.88rem; color: #3d4a58; pointer-events: none; }
+    .af-input {
+      width: 100%; padding: 10px 14px 10px 36px;
+      background: #111620; border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 5px; color: #e8edf5;
+      font-family: 'Inter', system-ui, sans-serif; font-size: 0.88rem;
+      outline: none; transition: all 0.18s;
+    }
+    .af-input::placeholder { color: #3d4a58; }
+    .af-input:focus { border-color: #3b82f6; background: rgba(59,130,246,0.04); box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+    .af-input.af-error { border-color: rgba(239,68,68,0.4); }
+
+    .af-alert {
+      padding: 9px 13px; border-radius: 5px; font-size: 0.78rem;
+      margin-bottom: 12px; display: flex; align-items: center; gap: 7px;
+    }
+    .af-alert.error { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.22); color: #fca5a5; }
+
+    .pw-match-msg { font-size: 0.72rem; margin-top: 4px; min-height: 16px; }
+
+    .af-submit {
+      width: 100%; padding: 12px; background: #3b82f6; color: #fff;
+      border: none; border-radius: 5px; font-size: 0.9rem; font-weight: 700;
+      cursor: pointer; transition: all 0.18s; margin-top: 8px;
+      box-shadow: 0 4px 16px rgba(59,130,246,0.3);
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+    .af-submit:hover { background: #2563eb; transform: translateY(-1px); box-shadow: 0 6px 22px rgba(59,130,246,0.45); }
+    .af-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+    .af-footer { margin-top: 16px; font-size: 0.78rem; color: #3d4a58; text-align: center; }
+    .af-footer a { color: #5b9cf6; font-weight: 600; }
+    .af-footer a:hover { color: #3b82f6; }
+
+    .af-tos { font-size: 0.68rem; color: #3d4a58; text-align: center; margin-top: 10px; line-height: 1.5; }
+
+    @media (max-width: 800px) {
+      .auth-split { grid-template-columns: 1fr; }
+      .auth-left  { display: none; }
+      .auth-right { padding: 32px 20px; justify-content: flex-start; padding-top: 56px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="auth-topbar">
+    <a href="/" class="auth-brand"><span class="brand-icon">📈</span>StockSense AI</a>
+    <a href="/login" class="auth-topbar-link">Already have an account?</a>
+  </div>
+
+  <div class="auth-split">
+
+    <!-- LEFT PANEL -->
+    <div class="auth-left">
+      <div class="auth-left-glow"></div>
+      <div class="auth-left-content">
+
+        <div class="auth-tagline-badge">
+          <span class="dot"></span>
+          Free · No Credit Card
+        </div>
+
+        <h1 class="auth-left-h1">Start trading<br><span class="accent">smarter today</span></h1>
+        <p class="auth-left-p">Get ₹10,00,000 in virtual funds instantly. Practice with real market data and ML predictions before risking real capital.</p>
+
+        <div class="perks-grid">
+          <div class="perk-item">
+            <div class="perk-icon">📊</div>
+            <div class="perk-title">Live Data</div>
+            <div class="perk-desc">NSE & BSE real-time quotes</div>
+          </div>
+          <div class="perk-item">
+            <div class="perk-icon">🤖</div>
+            <div class="perk-title">ML Forecasts</div>
+            <div class="perk-desc">1/7/30-day price predictions</div>
+          </div>
+          <div class="perk-item">
+            <div class="perk-icon">💼</div>
+            <div class="perk-title">Paper Trading</div>
+            <div class="perk-desc">₹10L virtual starting capital</div>
+          </div>
+          <div class="perk-item">
+            <div class="perk-icon">🗞️</div>
+            <div class="perk-title">Sentiment</div>
+            <div class="perk-desc">NLP news analysis per ticker</div>
+          </div>
+        </div>
+
+        <!-- Portfolio preview -->
+        <div class="port-preview">
+          <div class="port-preview-label">Sample Portfolio Performance</div>
+          <div class="port-row">
+            <span class="port-sym">RELIANCE.NS</span>
+            <span class="port-val">5 shares · ₹2,801</span>
+            <span class="port-chg" style="color:#22c55e;">+₹920</span>
+          </div>
+          <div class="port-row">
+            <span class="port-sym">TCS.NS</span>
+            <span class="port-val">3 shares · ₹3,742</span>
+            <span class="port-chg" style="color:#22c55e;">+₹1,340</span>
+          </div>
+          <div class="port-row">
+            <span class="port-sym">HDFCBANK.NS</span>
+            <span class="port-val">8 shares · ₹1,685</span>
+            <span class="port-chg" style="color:#ef4444;">−₹280</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL — Form -->
+    <div class="auth-right">
+      <div class="auth-form-header">
+        <div class="auth-form-title">Create your account</div>
+        <div class="auth-form-sub">Start with ₹10,00,000 in virtual trading funds</div>
+      </div>
+
+      {% if error %}
+        <div class="af-alert error">⚠ {{ error }}</div>
+      {% endif %}
+
+      <form method="POST" action="/register" id="register-form" autocomplete="on">
+
+        <div class="af-group">
+          <label class="af-label" for="username">Username</label>
+          <div class="af-input-wrap">
+            <span class="af-icon">👤</span>
+            <input type="text" id="username" name="username" class="af-input"
+              placeholder="Choose a username" required minlength="3" maxlength="30"
+              autocomplete="username" value="{{ request.form.username or '' }}" />
+          </div>
+        </div>
+
+        <div class="af-group">
+          <label class="af-label" for="email">Email Address</label>
+          <div class="af-input-wrap">
+            <span class="af-icon">📧</span>
+            <input type="email" id="email" name="email" class="af-input"
+              placeholder="your@email.com" required autocomplete="email"
+              value="{{ request.form.email or '' }}" />
+          </div>
+        </div>
+
+        <div class="af-group">
+          <label class="af-label" for="password">Password</label>
+          <div class="af-input-wrap">
+            <span class="af-icon">🔒</span>
+            <input type="password" id="password" name="password" class="af-input"
+              placeholder="Min. 6 characters" required minlength="6"
+              autocomplete="new-password" />
+          </div>
+        </div>
+
+        <div class="af-group">
+          <label class="af-label" for="confirm_password">Confirm Password</label>
+          <div class="af-input-wrap">
+            <span class="af-icon">✅</span>
+            <input type="password" id="confirm_password" name="confirm_password" class="af-input"
+              placeholder="Repeat your password" required minlength="6"
+              autocomplete="new-password" />
+          </div>
+          <div id="password-match-msg" class="pw-match-msg"></div>
+        </div>
+
+        <button type="submit" class="af-submit" id="register-btn">Create Free Account</button>
+
+      </form>
+
+      <div class="af-tos">By signing up, you agree that this platform is for educational use only and not investment advice.</div>
+
+      <div class="af-footer">
+        Already have an account? <a href="/login">Sign in →</a>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const pw  = document.getElementById("password");
+    const cpw = document.getElementById("confirm_password");
+    const msg = document.getElementById("password-match-msg");
+    const btn = document.getElementById("register-btn");
+
+    function checkMatch() {
+      if (!cpw.value) { msg.textContent = ""; return; }
+      if (pw.value === cpw.value) {
+        msg.textContent = "✅ Passwords match";
+        msg.style.color = "#22c55e";
+        cpw.classList.remove("af-error");
+      } else {
+        msg.textContent = "⚠ Passwords do not match";
+        msg.style.color = "#ef4444";
+        cpw.classList.add("af-error");
+      }
+    }
+    pw.addEventListener("input", checkMatch);
+    cpw.addEventListener("input", checkMatch);
+
+    document.getElementById("register-form").addEventListener("submit", (e) => {
+      if (pw.value !== cpw.value) {
+        e.preventDefault();
+        msg.textContent = "⚠ Passwords do not match";
+        msg.style.color = "#ef4444";
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = "Creating account…";
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+Flask==3.0.3
+Flask-Login==0.6.3
+Werkzeug==3.0.3
+yfinance==0.2.40
+scikit-learn==1.5.1
+numpy==1.26.4
+pandas==2.2.2
+requests==2.32.3
+python-dateutil==2.9.0
+razorpay==2.0.1
+textblob==0.20.0
+gunicorn==22.0.0
