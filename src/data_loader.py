@@ -13,6 +13,10 @@ import warnings
 import yfinance as yf
 import pandas as pd
 from textblob import TextBlob
+try:
+    from yahooquery import Ticker as YQTicker
+except ImportError:
+    YQTicker = None
 
 # ── SSL Fix (Windows / corporate firewall workaround) ──────────────────────
 # Some Windows environments block Yahoo Finance's SSL handshake.
@@ -45,14 +49,29 @@ def fetch_historical_data(ticker: str, period: str = "6mo") -> dict:
     try:
         ticker = ticker.upper()
 
-        # yf.download is the most stable cross-version API
+        # ── Primary attempt with yfinance (modern Browser Impersonation) ────
         df = yf.download(
             ticker,
             period=period,
             progress=False,
-            auto_adjust=True,   # Adjusts for splits & dividends
+            auto_adjust=True,
             threads=False,
         )
+        
+        # ── Fallback attempt with yahooquery if yfinance is blocked ────────
+        if (df is None or df.empty) and YQTicker is not None:
+            try:
+                yq = YQTicker(ticker)
+                df = yq.history(period=period)
+                if df is not None and not df.empty:
+                    # yahooquery returns a different index format; fix it
+                    if isinstance(df.index, pd.MultiIndex):
+                        df = df.xs(ticker, level=0)
+                    df = df.reset_index()
+                    # Standardize columns to match yfinance output
+                    df.rename(columns={'adjclose': 'Close', 'open': 'Open', 'high': 'High', 'low': 'Low', 'volume': 'Volume', 'date': 'Date'}, inplace=True)
+            except Exception:
+                pass
 
         if df is None or df.empty:
             return {"error": f"No data found for ticker '{ticker}'. Please verify the symbol (e.g. AAPL, TSLA, MSFT)."}
