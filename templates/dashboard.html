@@ -397,8 +397,39 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
+  <style>
+    /* ── Real-time price flash animations ───────────────────── */
+    @keyframes flashGreen {
+      0%   { background: rgba(34,197,94,0.25); }
+      100% { background: transparent; }
+    }
+    @keyframes flashRed {
+      0%   { background: rgba(239,68,68,0.25); }
+      100% { background: transparent; }
+    }
+    .price-flash-up   { animation: flashGreen 0.8s ease-out; }
+    .price-flash-down { animation: flashRed   0.8s ease-out; }
+
+    /* ── Live update indicator ─────────────────────────────── */
+    #live-update-bar {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.67rem; color: var(--text-muted);
+      padding: 4px 10px;
+      border-top: 1px solid var(--border);
+      margin-top: 4px;
+    }
+    #live-update-bar .live-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: #22c55e; flex-shrink: 0;
+      animation: blink 2s infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+    #live-update-bar.stale .live-dot { background: #f59e0b; }
+  </style>
+
   <script>
     // ── Market Status ──────────────────────────────────────────
+    let _isMarketLive = false;
     (function() {
       const now = new Date();
       // NSE: Mon–Fri, 9:15–15:30 IST (UTC+5:30)
@@ -408,10 +439,10 @@
       const mins = h * 60 + m;
       const isWeekday = day >= 1 && day <= 5;
       const isMarketHours = mins >= 555 && mins < 930; // 9:15 – 15:30
-      const isLive = isWeekday && isMarketHours;
+      _isMarketLive = isWeekday && isMarketHours;
       const badge = document.getElementById("market-status-badge");
       const label = document.getElementById("market-status-text");
-      if (isLive) {
+      if (_isMarketLive) {
         badge.className = "market-status live";
         label.innerText = "NSE LIVE";
       } else {
@@ -429,6 +460,157 @@
     document.querySelectorAll(".ticker-pill,.favorite-chip,.history-item").forEach(el => {
       el.addEventListener("click", hideWelcome);
     });
+
+    // ── Real-time Live Quote Polling ───────────────────────────
+    // Collects tickers from the sidebar watchlist table and polls
+    // /api/live_quotes every 10s (market hours) or 60s (closed).
+    // Updates both the ticker tape and the sidebar table in-place.
+
+    // Cache of previous prices so we can detect direction changes
+    const _prevPrices = {};
+
+    function flashCell(el, direction) {
+      el.classList.remove("price-flash-up", "price-flash-down");
+      void el.offsetWidth; // force reflow to restart animation
+      el.classList.add(direction === "up" ? "price-flash-up" : "price-flash-down");
+    }
+
+    function collectTickers() {
+      // Grab symbols from sidebar watchlist rows
+      const tickers = [];
+      document.querySelectorAll(".watchlist-table tbody tr").forEach(row => {
+        const sym = row.querySelector(".ticker-name");
+        if (sym) {
+          // ticker-name shows bare name; get full symbol from title attr
+          const full = sym.getAttribute("title") || sym.textContent.trim();
+          if (full) tickers.push(full.toUpperCase());
+        }
+      });
+      return [...new Set(tickers)]; // deduplicate
+    }
+
+    function updateSidebar(quotes) {
+      const tbody = document.querySelector(".watchlist-table tbody");
+      if (!tbody) return;
+
+      quotes.forEach(q => {
+        // Find the row whose ticker-name title matches this symbol
+        const rows = tbody.querySelectorAll("tr");
+        rows.forEach(row => {
+          const nameEl = row.querySelector(".ticker-name");
+          if (!nameEl) return;
+          const sym = (nameEl.getAttribute("title") || "").toUpperCase();
+          if (sym !== q.symbol) return;
+
+          // Price cell
+          const priceEl = row.querySelector(".price-value");
+          if (priceEl) {
+            const prev = _prevPrices[q.symbol]?.price;
+            const newPrice = `₹${q.price.toFixed(2)}`;
+            if (prev !== undefined && prev !== q.price) {
+              priceEl.textContent = newPrice;
+              flashCell(priceEl, q.change >= 0 ? "up" : "down");
+            } else {
+              priceEl.textContent = newPrice;
+            }
+          }
+
+          // Change% badge
+          const badgeEl = row.querySelector(".badge");
+          if (badgeEl) {
+            const sign = q.change_pct >= 0 ? "+" : "";
+            badgeEl.textContent = `${sign}${q.change_pct.toFixed(2)}%`;
+            badgeEl.className = `badge badge-${q.trend}`;
+          }
+
+          _prevPrices[q.symbol] = { price: q.price, change_pct: q.change_pct };
+        });
+      });
+    }
+
+    function updateTickerTape(quotes) {
+      const inner = document.getElementById("ticker-tape-inner");
+      if (!inner) return;
+
+      // Build a map for fast lookup
+      const quoteMap = {};
+      quotes.forEach(q => quoteMap[q.symbol] = q);
+
+      // Update all tape-items (both copies for the looping animation)
+      inner.querySelectorAll(".tape-item").forEach(item => {
+        const symEl    = item.querySelector(".t-sym");
+        const priceEl  = item.querySelector(".t-price");
+        const changeEl = item.querySelector(".t-chg");
+        if (!symEl || !priceEl || !changeEl) return;
+
+        const sym = symEl.textContent.trim().toUpperCase();
+        const q = quoteMap[sym];
+        if (!q) return;
+
+        priceEl.textContent = `₹${q.price.toFixed(2)}`;
+        const sign = q.change_pct >= 0 ? "+" : "";
+        changeEl.textContent = `${sign}${q.change_pct.toFixed(2)}%`;
+        changeEl.className = `t-chg ${q.change_pct >= 0 ? "up" : "dn"}`;
+      });
+    }
+
+    function updateTimestamp(ts) {
+      const bar = document.getElementById("live-update-bar");
+      if (bar) {
+        const tsEl = bar.querySelector("#lq-timestamp");
+        if (tsEl) tsEl.textContent = `Updated ${ts}`;
+        bar.classList.remove("stale");
+      }
+    }
+
+    // AbortController guard — cancels any in-flight request before the
+    // next poll fires, so 10s interval never causes request pile-up.
+    let _liveQuoteAbort = null;
+
+    async function pollLiveQuotes() {
+      const tickers = collectTickers();
+      if (tickers.length === 0) return;
+
+      // Cancel the previous request if it's still in-flight
+      if (_liveQuoteAbort) {
+        _liveQuoteAbort.abort();
+      }
+      _liveQuoteAbort = new AbortController();
+
+      try {
+        const url = `/api/live_quotes?tickers=${encodeURIComponent(tickers.join(","))}`;
+        const res = await fetch(url, { signal: _liveQuoteAbort.signal });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.quotes && data.quotes.length > 0) {
+          updateSidebar(data.quotes);
+          updateTickerTape(data.quotes);
+          updateTimestamp(data.timestamp || "");
+        }
+      } catch (e) {
+        if (e.name === "AbortError") return; // intentionally cancelled — ignore
+        // Network error — mark stale
+        const bar = document.getElementById("live-update-bar");
+        if (bar) bar.classList.add("stale");
+      }
+    }
+
+    // Inject the "Last updated" bar into the Live Quotes card header
+    (function injectUpdateBar() {
+      const cardHeader = document.querySelector(".watchlist-table")?.closest(".card")?.querySelector(".card-header");
+      if (!cardHeader) return;
+      const bar = document.createElement("div");
+      bar.id = "live-update-bar";
+      bar.innerHTML = `<span class="live-dot"></span><span id="lq-timestamp">Connecting…</span>`;
+      cardHeader.after(bar);
+    })();
+
+    // Poll interval: 5s when market is live, 60s when closed
+    const POLL_INTERVAL = _isMarketLive ? 10000 : 60000;
+
+    // Kick off immediately, then repeat
+    pollLiveQuotes();
+    setInterval(pollLiveQuotes, POLL_INTERVAL);
   </script>
 
 </body>

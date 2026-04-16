@@ -723,6 +723,27 @@ def market():
     """Render the market directory dashboard."""
     return render_template("market.html", username=session["username"])
 
+# ─────────────────────────────────────────────
+# API: Live Quotes (polling endpoint)
+# ─────────────────────────────────────────────
+
+@app.route("/api/live_quotes")
+@login_required
+def api_live_quotes():
+    """
+    Return fresh live quotes for a comma-separated list of tickers.
+    Used by the frontend to poll for real-time price updates.
+    Query param: tickers=TCS.NS,INFY.NS,...
+    """
+    raw = request.args.get("tickers", "")
+    tickers = [t.strip().upper() for t in raw.split(",") if t.strip()]
+    if not tickers:
+        return jsonify({"error": "No tickers provided"}), 400
+
+    quotes = get_multiple_quotes(tickers)
+    return jsonify({"quotes": quotes, "timestamp": datetime.utcnow().strftime("%H:%M:%S UTC")})
+
+
 @app.route("/api/market_data")
 @login_required
 def market_data():
