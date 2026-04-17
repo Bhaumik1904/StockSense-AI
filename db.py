@@ -20,12 +20,24 @@ IS_POSTGRES = bool(DATABASE_URL)
 if IS_POSTGRES:
     import psycopg2
     import psycopg2.extras  # for RealDictCursor
+    from datetime import datetime, date as date_type
+
+    def _to_str(val):
+        """Convert datetime/date objects to ISO strings for template compatibility."""
+        if isinstance(val, (datetime, date_type)):
+            return str(val)
+        return val
+
+    def _stringify_row(row):
+        """Convert all datetime values in a row dict to strings."""
+        if row is None:
+            return None
+        return {k: _to_str(v) for k, v in dict(row).items()}
 
     def get_db():
         """Return a per-request PostgreSQL connection."""
         db = getattr(g, "_database", None)
         if db is None:
-            # sslmode handled via URL param or Supabase default
             db = g._database = psycopg2.connect(
                 DATABASE_URL,
                 cursor_factory=psycopg2.extras.RealDictCursor,
@@ -40,8 +52,9 @@ if IS_POSTGRES:
         if commit:
             conn.commit()
             return None
-        rv = cur.fetchone() if one else cur.fetchall()
-        return rv
+        if one:
+            return _stringify_row(cur.fetchone())
+        return [_stringify_row(r) for r in cur.fetchall()]
 
     def close_connection(exception):
         db = getattr(g, "_database", None)
