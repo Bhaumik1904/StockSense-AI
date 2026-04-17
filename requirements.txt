@@ -13,3 +13,4 @@ python-dotenv==1.0.1
 gunicorn==21.2.0
 curl_cffi
 yahooquery
+psycopg2-binary==2.9.9
