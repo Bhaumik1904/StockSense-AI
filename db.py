@@ -25,10 +25,10 @@ if IS_POSTGRES:
         """Return a per-request PostgreSQL connection."""
         db = getattr(g, "_database", None)
         if db is None:
+            # sslmode handled via URL param or Supabase default
             db = g._database = psycopg2.connect(
                 DATABASE_URL,
                 cursor_factory=psycopg2.extras.RealDictCursor,
-                sslmode="require",
             )
         return db
 
@@ -50,7 +50,7 @@ if IS_POSTGRES:
 
     def init_db():
         """Create tables (idempotent) on PostgreSQL."""
-        conn = psycopg2.connect(DATABASE_URL, sslmode="require")
+        conn = psycopg2.connect(DATABASE_URL)
         cur = conn.cursor()
         cur.execute("""
             CREATE TABLE IF NOT EXISTS users (
