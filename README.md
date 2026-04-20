@@ -1,127 +1,107 @@
-# Smart Stock Analytics & Prediction Web App
+<div align="center">
+  <h1>📈 StockSense AI</h1>
+  <p><strong>A Full-Stack Smart Stock Analytics & ML Prediction Platform</strong></p>
+  
+  [![Live Demo](https://img.shields.io/badge/Live_Demo-StockSense_AI-00f2fe?style=for-the-badge&logo=render)](https://stocksenseai-49l5.onrender.com/)
+  
+  <br />
 
-A full-stack web application for real-time stock market analysis and ML-powered next-day price prediction.
+  [![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+  [![Flask](https://img.shields.io/badge/Flask-Web_Framework-000000?style=flat-square&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+  [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+  [![scikit-learn](https://img.shields.io/badge/scikit--learn-Machine_Learning-F7931E?style=flat-square&logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-## 🚀 Features
+</div>
 
-- **User Authentication** – Register, login, logout with secure password hashing
-- **Real-Time Stock Data** – Fetch OHLCV data via Yahoo Finance (yfinance)
-- **Interactive Charts** – Beautiful Chart.js price history with prediction overlay
-- **ML Prediction** – Linear Regression model predicts next day's closing price
-- **Favorites System** – Save and track your watchlist
-- **Search History** – Quickly re-analyze recent stocks
-- **Premium Dark UI** – Glassmorphism design with animations
+---
 
-## 🧱 Tech Stack
+## 🚀 Overview
 
-| Layer     | Technology                        |
-|-----------|-----------------------------------|
-| Backend   | Python, Flask                     |
-| Database  | SQLite                            |
-| ML Model  | scikit-learn (Linear Regression)  |
-| Data      | yfinance (Yahoo Finance)          |
-| Charts    | Chart.js                          |
-| Frontend  | HTML5, CSS3 (vanilla), JavaScript |
+**StockSense AI** is a comprehensive financial technology platform designed to empower users with real-time stock market data, deep historical analytics, and predictive modeling. Utilizing a robust **Flask** backend, **PostgreSQL** database, and machine learning pipelines powered by **scikit-learn**, it delivers actionable insights wrapped in a high-performance, aesthetically pleasing "glassmorphism" user interface.
 
-## 📁 Project Structure
+[🔴 **View Live Application Here**](https://stocksenseai-49l5.onrender.com/)
 
-```
-stock_web_app/
-├── app.py                  # Flask entry point, all routes & API
-├── requirements.txt        # Python dependencies
-├── static/
-│   ├── css/style.css       # Premium dark-mode glassmorphism styles
-│   └── js/main.js          # Chart rendering, fetch API, UI logic
-├── templates/
-│   ├── index.html          # Landing page
-│   ├── login.html          # Login form
-│   ├── register.html       # Registration form
-│   └── dashboard.html      # Main user dashboard
-├── database/
-│   └── db.sqlite3          # SQLite database (auto-created on first run)
-└── src/
-    ├── __init__.py
-    ├── data_loader.py      # yfinance data fetching utilities
-    ├── model.py            # Linear Regression training pipeline
-    └── predict.py          # Full prediction pipeline (data → train → predict)
-```
+## ✨ Key Features
 
-## ⚙️ Setup & Installation
+- **Real-Time Market Data**: High-fidelity data fetching capabilities via the `yfinance` API.
+- **Machine Learning Integration**: Next-day closing price prediction utilizing a reliable Linear Regression model based on a 5-day sliding window feature set.
+- **Sentiment Analysis**: Incorporates `TextBlob` for processing and analyzing contextual market sentiment over specific assets.
+- **Secure Authentication System**: Complete password hashing and secure session management scaling via Flask-Login.
+- **Integrated Payments**: Ready-to-scale payment gateway processing built with the `Razorpay` SDK.
+- **Dynamic Watchlist**: Seamless portfolio and favorites tracking backed by a relational database schema.
+- **Premium UI/UX**: Custom-designed dark mode interface leveraging native CSS3 for fluid, hardware-accelerated animations and interactive `Chart.js` visualizations.
 
-### 1. Clone / Navigate to project directory
+---
 
+## 🛠️ Architecture & Tech Stack
+
+| Component | Technology | 
+|-----------|------------|
+| **Backend** | Python, Flask, Gunicorn | 
+| **Database** | PostgreSQL (Production) / SQLite (Local) | 
+| **Machine Learning** | scikit-learn, Numpy, Pandas | 
+| **Data Providers** | yfinance, yahooquery, curl_cffi |
+| **Integrations** | Razorpay, TextBlob |
+| **Frontend** | HTML5, Vanilla JS, CSS3, Chart.js |
+| **Deployment** | Render, Vercel |
+
+---
+
+## ⚙️ Local Development Setup
+
+To run this project locally, follow these steps:
+
+### 1. Clone the Repository
 ```bash
-cd stock_web_app
+git clone https://github.com/yourusername/stocksense-ai.git
+cd stocksense-ai
 ```
 
-### 2. Create a virtual environment (recommended)
-
+### 2. Set Up Virtual Environment
 ```bash
+# Windows
 python -m venv venv
-# Windows:
 venv\Scripts\activate
-# macOS/Linux:
+
+# macOS / Linux
+python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 3. Install dependencies
-
+### 3. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Run the application
+### 4. Configure Environment Variables
+Create a `.env` file in the root directory and configure your essential keys:
+```env
+SECRET_KEY=your_secret_flask_key
+DATABASE_URL=your_postgresql_database_url
+RAZORPAY_KEY_ID=your_razorpay_key
+RAZORPAY_KEY_SECRET=your_razorpay_secret
+```
+*(Note: If `DATABASE_URL` is omitted, the application will default to generating a local SQLite database for ease of use)*
 
+### 5. Run the Server
 ```bash
 python app.py
 ```
+*The application should now be running locally at `http://127.0.0.1:5000/`*
 
-### 5. Open in browser
+---
 
-```
-http://localhost:5000
-```
+## 🧠 Machine Learning Pipeline Walkthrough
 
-## 🔗 API Endpoints
+1. **Data Extraction**: Pulls 6-12 months of historical closing sequences dynamically via `yfinance`.
+2. **Feature Engineering**: Constructs a continuous 5-day sliding window structure as X variables to inform target behavior.
+3. **Training & Split**: Standard 80/20 train/test data distribution logic.
+4. **Modeling**: Core model is driven by `sklearn.linear_model.LinearRegression`.
+5. **Evaluation**: Output efficiency is quantified utilizing Mean Absolute Error (MAE) and R² scoring benchmarks before surfacing recommendations.
 
-| Method | Route              | Description                             |
-|--------|--------------------|-----------------------------------------|
-| GET    | `/`                | Landing page                            |
-| GET    | `/login`           | Login page                              |
-| POST   | `/login`           | Authenticate user                       |
-| GET    | `/register`        | Register page                           |
-| POST   | `/register`        | Create new user                         |
-| GET    | `/logout`          | Clear session, redirect to login        |
-| GET    | `/dashboard`       | User dashboard (auth required)          |
-| POST   | `/predict`         | Fetch stock data + ML prediction (JSON) |
-| POST   | `/favorite`        | Toggle favorite stock (JSON)            |
-| GET    | `/is_favorite/<t>` | Check if ticker is favorited (JSON)     |
-| POST   | `/history/delete`  | Clear user's search history (JSON)      |
+---
 
-## 🤖 How the ML Model Works
+## 📜 License
 
-1. **Data**: Fetches 6–12 months of historical closing prices via yfinance
-2. **Features**: Uses a sliding window of the last **5 days** as features (X)
-3. **Target**: The next day's closing price (y)
-4. **Split**: 80% training / 20% testing
-5. **Model**: `sklearn.linear_model.LinearRegression`
-6. **Metrics**: Reports MAE (Mean Absolute Error) and R² score
-7. **Prediction**: Uses the most recent 5 closing prices to predict tomorrow
-
-## ⚠️ Disclaimer
-
-This application is for **educational purposes only**. Stock predictions are not financial advice. Always consult a qualified financial advisor before making investment decisions.
-
-## 📦 Dependencies
-
-```
-Flask==3.0.3
-Flask-Login==0.6.3
-Werkzeug==3.0.3
-yfinance==0.2.40
-scikit-learn==1.5.1
-numpy==1.26.4
-pandas==2.2.2
-requests==2.32.3
-python-dateutil==2.9.0
-```
+This project is licensed under the [MIT License](LICENSE). Applications and algorithms built herein are strictly for educational and portfolio demonstration purposes and do not constitute formal financial advice.
