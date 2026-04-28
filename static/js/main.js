@@ -690,7 +690,7 @@ function setupTradeModal() {
     submitBtn.disabled = true;
     submitBtn.innerText = "Processing...";
 
-    // ── SELL: use existing /trade endpoint directly ──────────
+    // ── SELL: use /trade endpoint directly ───────────────────
     if (action === "SELL") {
       try {
         const res = await fetch("/trade", {
@@ -702,7 +702,7 @@ function setupTradeModal() {
         if (data.error) {
           showToast(data.error, "error");
         } else {
-          showToast(`Successfully sold ${shares} shares of ${currentTicker}!`, "success");
+          showToast(`✅ Sold ${data.shares} shares of ${data.ticker} @ ₹${data.price.toFixed(2)}!`, "success");
           modal.classList.add("hidden");
         }
       } catch (e) {
@@ -714,7 +714,7 @@ function setupTradeModal() {
       return;
     }
 
-    // ── BUY: go through Razorpay payment ────────────────────
+    // ── BUY: go through Razorpay payment ─────────────────────
     try {
       // Step 1: Create Razorpay order on server
       const orderRes  = await fetch("/create_trade_order", {
@@ -743,11 +743,33 @@ function setupTradeModal() {
         order_id:    orderData.order_id,
         notes:       { ticker: orderData.ticker, shares: String(orderData.shares) },
         theme:       { color: "#3b82f6" },
+        config: {
+          display: {
+            blocks: {
+              wallet: {
+                name: "Pay via Wallet",
+                instruments: [
+                  { method: "wallet", wallets: ["paytm", "phonepe", "mobikwik", "freecharge", "jiomoney", "olamoney"] }
+                ]
+              },
+              other: {
+                name: "Other Payment Methods",
+                instruments: [
+                  { method: "upi" },
+                  { method: "card" },
+                  { method: "netbanking" }
+                ]
+              }
+            },
+            sequence: ["block.wallet", "block.other"],
+            preferences: { show_default_blocks: false }
+          }
+        },
         handler: async function(response) {
           // Step 3: Verify & record trade
           const verRes = await fetch("/verify_and_trade", {
             method:  "POST",
-            headers: {"Content-Type": "application/json"},
+            headers: { "Content-Type": "application/json" },
             body:    JSON.stringify({
               razorpay_order_id:   response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
@@ -759,23 +781,13 @@ function setupTradeModal() {
           });
           const verData = await verRes.json();
           if (verData.success) {
-            showToast(`✅ Bought ${verData.shares} shares of ${verData.ticker} at ₹${verData.price.toFixed(2)}!`, "success");
+            showToast(`✅ Bought ${verData.shares} shares of ${verData.ticker} @ ₹${verData.price.toFixed(2)}!`, "success");
           } else {
             showToast(verData.error || "Trade verification failed.", "error");
           }
         },
         modal: { ondismiss: () => {} }
       };
-
-      if (typeof Razorpay === "undefined") {
-        // Lazy-load checkout.js if not already present
-        await new Promise((resolve, reject) => {
-          const s = document.createElement("script");
-          s.src = "https://checkout.razorpay.com/v1/checkout.js";
-          s.onload = resolve; s.onerror = reject;
-          document.head.appendChild(s);
-        });
-      }
 
       const rzp = new Razorpay(options);
       rzp.open();
