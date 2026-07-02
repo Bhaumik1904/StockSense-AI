@@ -37,7 +37,7 @@ RZP_KEY_SECRET = os.getenv("RZP_KEY_SECRET")
 rzp_client = razorpay.Client(auth=(RZP_KEY_ID, RZP_KEY_SECRET))
 
 # ─────────────────────────────────────────────
-# App Configuration
+# Main Flask App Configuration
 # ─────────────────────────────────────────────
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "fallback_key_for_dev_only")
