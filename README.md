@@ -178,3 +178,7 @@ The backend is hosted on Render, ensuring continuous delivery and scaling.
 
 ## 🧪 Testing
 Unit tests are located in the `tests/` directory. Run via `pytest`.
+
+
+## 🎨 Code Style
+We use `flake8` and `black` for Python code formatting.
