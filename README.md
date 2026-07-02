@@ -119,3 +119,7 @@ Dockerization is currently under development to simplify deployment.
 
 ## 📖 API Documentation
 API endpoints will be documented using Swagger/OpenAPI in future releases.
+
+
+## 🤝 Contributing
+We welcome contributions! Please see our contributing guidelines before submitting PRs.
