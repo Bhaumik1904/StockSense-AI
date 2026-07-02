@@ -144,3 +144,7 @@ For support, please open an issue in the GitHub repository.
 
 ## 🔧 Troubleshooting
 If you face issues with PostgreSQL, ensure the service is running and credentials match `.env`.
+
+
+## 📝 Changelog
+See the releases page for a detailed changelog.
