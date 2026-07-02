@@ -53,7 +53,7 @@ database.init_db()
 # Shorthand helpers
 # ─────────────────────────────────────────────
 
-def qdb(query, args=(), one=False, commit=False):
+def qdb(query: str, args=(), one: bool = False, commit: bool = False):
     """Thin wrapper around database.query_db for brevity."""
     return database.query_db(query, args=args, one=one, commit=commit)
 
