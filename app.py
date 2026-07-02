@@ -42,7 +42,7 @@ rzp_client = razorpay.Client(auth=(RZP_KEY_ID, RZP_KEY_SECRET))
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "fallback_key_for_dev_only")
 
-# Register teardown so connections are closed after every request
+# Register teardown function to ensure database connections are closed cleanly
 app.teardown_appcontext(database.close_connection)
 
 # Initialise DB schema on startup
