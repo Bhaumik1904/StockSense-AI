@@ -22,7 +22,7 @@ if IS_POSTGRES:
     import psycopg2.extras  # for RealDictCursor
     from datetime import datetime, date as date_type
 
-    def _to_str(val):
+    def _to_str(val) -> str:
         """Convert datetime/date objects to ISO strings for template compatibility."""
         if isinstance(val, (datetime, date_type)):
             return str(val)
