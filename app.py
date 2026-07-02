@@ -30,7 +30,7 @@ from src.tickers import INDIAN_STOCKS
 import db as database
 
 # ─────────────────────────────────────────────
-# Razorpay Client
+# Razorpay Payment Gateway Client
 # ─────────────────────────────────────────────
 RZP_KEY_ID     = os.getenv("RZP_KEY_ID")
 RZP_KEY_SECRET = os.getenv("RZP_KEY_SECRET")
