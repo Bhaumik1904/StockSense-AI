@@ -44,7 +44,7 @@ if IS_POSTGRES:
             )
         return db
 
-    def query_db(query, args=(), one=False, commit=False):
+    def query_db(query: str, args=(), one: bool = False, commit: bool = False):
         """Execute a query and optionally fetch results."""
         conn = get_db()
         cur = conn.cursor()
@@ -126,7 +126,7 @@ else:
             db.row_factory = sqlite3.Row
         return db
 
-    def query_db(query, args=(), one=False, commit=False):
+    def query_db(query: str, args=(), one: bool = False, commit: bool = False):
         # Translate %s → ? for SQLite
         query = query.replace("%s", "?")
         conn = get_db()
