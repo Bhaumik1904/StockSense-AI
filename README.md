@@ -158,3 +158,7 @@ See the releases page for a detailed changelog.
 
 ## 💻 System Requirements
 Minimum 2GB RAM, 1 vCPU for local development.
+
+
+## 📊 Data Sources
+All historical data is fetched from Yahoo Finance via the `yfinance` library.
