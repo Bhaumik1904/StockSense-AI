@@ -115,3 +115,7 @@ This project is licensed under the [MIT License](LICENSE). Applications and algo
 
 ## 🐳 Docker Support (Coming Soon)
 Dockerization is currently under development to simplify deployment.
+
+
+## 📖 API Documentation
+API endpoints will be documented using Swagger/OpenAPI in future releases.
