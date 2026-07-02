@@ -135,3 +135,8 @@ If you discover a security vulnerability, please send an e-mail to the maintaine
 
 ## 💬 Support
 For support, please open an issue in the GitHub repository.
+
+
+## 🎉 Acknowledgments
+- yfinance for market data
+- Flask community
