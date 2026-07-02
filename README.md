@@ -154,3 +154,7 @@ See the releases page for a detailed changelog.
 - [ ] Advanced charting
 - [ ] Portfolio sharing
 - [ ] Crypto support
+
+
+## 💻 System Requirements
+Minimum 2GB RAM, 1 vCPU for local development.
