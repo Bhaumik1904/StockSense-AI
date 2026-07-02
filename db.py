@@ -191,4 +191,5 @@ else:
         conn.close()
         print("✅ SQLite DB initialised.")
 
+    # Placeholder style for SQLite
     PH = "?"
