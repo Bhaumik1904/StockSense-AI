@@ -40,6 +40,7 @@ INDIAN_STOCKS = [
     {"symbol": "GRASIM.NS", "name": "Grasim Industries"},
     {"symbol": "JSWSTEEL.NS", "name": "JSW Steel"},
     {"symbol": "INDUSINDBK.NS", "name": "IndusInd Bank"},
+    {"symbol": "ADANIENT.NS", "name": "Adani Enterprises"},
     {"symbol": "DRREDDY.NS", "name": "Dr. Reddy's Labs"},
     {"symbol": "CIPLA.NS", "name": "Cipla"},
     {"symbol": "BAJAJ-AUTO.NS", "name": "Bajaj Auto"},
