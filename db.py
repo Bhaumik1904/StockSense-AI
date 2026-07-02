@@ -16,7 +16,7 @@ from flask import g
 DATABASE_URL = os.getenv("DATABASE_URL")  # Set on Render / Supabase
 IS_POSTGRES = bool(DATABASE_URL)
 
-# ── PostgreSQL ──────────────────────────────────────────────────────────────
+# ── PostgreSQL Configuration ────────────────────────────────────────────────
 if IS_POSTGRES:
     import psycopg2
     import psycopg2.extras  # for RealDictCursor
