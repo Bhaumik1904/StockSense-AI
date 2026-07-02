@@ -170,3 +170,7 @@ Our models are retrained weekly to adapt to new market conditions.
 
 ## ⚡ Performance
 The UI is optimized for 60fps scrolling and rapid chart rendering.
+
+
+## 🏗️ Deployment
+The backend is hosted on Render, ensuring continuous delivery and scaling.
