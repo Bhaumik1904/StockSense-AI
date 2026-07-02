@@ -140,3 +140,7 @@ For support, please open an issue in the GitHub repository.
 ## 🎉 Acknowledgments
 - yfinance for market data
 - Flask community
+
+
+## 🔧 Troubleshooting
+If you face issues with PostgreSQL, ensure the service is running and credentials match `.env`.
