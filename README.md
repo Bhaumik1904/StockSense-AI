@@ -105,3 +105,9 @@ python app.py
 ## 📜 License
 
 This project is licensed under the [MIT License](LICENSE). Applications and algorithms built herein are strictly for educational and portfolio demonstration purposes and do not constitute formal financial advice.
+
+
+## 📋 Prerequisites
+- Python 3.9+
+- PostgreSQL 13+
+- Git
