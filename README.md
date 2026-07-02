@@ -131,3 +131,7 @@ Please note that this project is released with a Contributor Code of Conduct.
 
 ## 🔒 Security
 If you discover a security vulnerability, please send an e-mail to the maintainers.
+
+
+## 💬 Support
+For support, please open an issue in the GitHub repository.
