@@ -186,3 +186,7 @@ We use `flake8` and `black` for Python code formatting.
 
 ## 🔄 CI/CD
 GitHub Actions are configured for automated linting and testing.
+
+
+## 📫 Contact
+Reach out to the project maintainers via GitHub discussions.
