@@ -50,7 +50,7 @@ database.init_db()
 
 
 # ─────────────────────────────────────────────
-# Shorthand helpers
+# Database shorthand helpers
 # ─────────────────────────────────────────────
 
 def qdb(query: str, args=(), one: bool = False, commit: bool = False):
