@@ -166,3 +166,7 @@ All historical data is fetched from Yahoo Finance via the `yfinance` library.
 
 ## 🤖 Machine Learning Details
 Our models are retrained weekly to adapt to new market conditions.
+
+
+## ⚡ Performance
+The UI is optimized for 60fps scrolling and rapid chart rendering.
