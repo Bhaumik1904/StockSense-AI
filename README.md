@@ -123,3 +123,7 @@ API endpoints will be documented using Swagger/OpenAPI in future releases.
 
 ## 🤝 Contributing
 We welcome contributions! Please see our contributing guidelines before submitting PRs.
+
+
+## 📜 Code of Conduct
+Please note that this project is released with a Contributor Code of Conduct.
