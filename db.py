@@ -28,7 +28,7 @@ if IS_POSTGRES:
             return str(val)
         return val
 
-    def _stringify_row(row):
+    def _stringify_row(row) -> dict:
         """Convert all datetime values in a row dict to strings."""
         if row is None:
             return None
