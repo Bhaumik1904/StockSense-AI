@@ -109,7 +109,7 @@ if IS_POSTGRES:
     # Placeholder style for PostgreSQL
     PH = "%s"
 
-# ── SQLite (local dev) ───────────────────────────────────────────────────────
+# ── SQLite Configuration (Local Dev) ─────────────────────────────────────────
 else:
     _DB_PATH = os.path.join(os.path.dirname(__file__), "database", "db.sqlite3")
 
