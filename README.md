@@ -148,3 +148,9 @@ If you face issues with PostgreSQL, ensure the service is running and credential
 
 ## 📝 Changelog
 See the releases page for a detailed changelog.
+
+
+## 🗺️ Roadmap
+- [ ] Advanced charting
+- [ ] Portfolio sharing
+- [ ] Crypto support
