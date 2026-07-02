@@ -59,7 +59,7 @@ def qdb(query: str, args=(), one: bool = False, commit: bool = False):
 
 
 # ─────────────────────────────────────────────
-# Auth Decorator
+# Authentication Decorator
 # ─────────────────────────────────────────────
 
 def login_required(f):
