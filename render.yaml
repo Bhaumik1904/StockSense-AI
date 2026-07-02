@@ -1,4 +1,4 @@
-# Render deployment configuration
+# Render deployment configuration for StockSense-AI
 services:
   - type: web
     name: stocksense-ai
