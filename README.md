@@ -111,3 +111,7 @@ This project is licensed under the [MIT License](LICENSE). Applications and algo
 - Python 3.9+
 - PostgreSQL 13+
 - Git
+
+
+## 🐳 Docker Support (Coming Soon)
+Dockerization is currently under development to simplify deployment.
