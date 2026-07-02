@@ -57,6 +57,7 @@ if IS_POSTGRES:
         return [_stringify_row(r) for r in cur.fetchall()]
 
     def close_connection(exception):
+        """Close the database connection at the end of the request."""
         db = getattr(g, "_database", None)
         if db is not None:
             db.close()
@@ -117,6 +118,7 @@ else:
         pass
 
     def get_db():
+        """Return a per-request SQLite connection."""
         db = getattr(g, "_database", None)
         if db is None:
             os.makedirs(os.path.dirname(_DB_PATH), exist_ok=True)
@@ -136,6 +138,7 @@ else:
         return rv
 
     def close_connection(exception):
+        """Close the database connection at the end of the request."""
         db = getattr(g, "_database", None)
         if db is not None:
             db.close()
