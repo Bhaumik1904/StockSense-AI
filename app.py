@@ -64,6 +64,7 @@ def qdb(query: str, args=(), one: bool = False, commit: bool = False):
 
 def login_required(f):
     """Decorator to protect routes that require authentication."""
+    # Preserve the original function metadata
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if "user_id" not in session:
