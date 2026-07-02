@@ -174,3 +174,7 @@ The UI is optimized for 60fps scrolling and rapid chart rendering.
 
 ## 🏗️ Deployment
 The backend is hosted on Render, ensuring continuous delivery and scaling.
+
+
+## 🧪 Testing
+Unit tests are located in the `tests/` directory. Run via `pytest`.
